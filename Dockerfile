@@ -1,32 +1,30 @@
-# Optimized Root Dockerfile using npm workspaces
-FROM node:20-slim AS builder
+# Robust Root Dockerfile for VibeTeams
+FROM node:20
+
 WORKDIR /app
 
-# Copy workspace configuration and manifests
+# Disable telemetry to save memory/time
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Copy all configuration files
 COPY package*.json ./
 COPY apps/frontend/package*.json ./apps/frontend/
 COPY shared/package*.json ./shared/
 
-# Install dependencies using workspaces
+# Install dependencies (root + workspaces)
 RUN npm install
 
-# Copy source code
+# Copy all source code
 COPY . .
 
-# Build the frontend package
+# Build the frontend workspace
 RUN npm run build -w frontend
 
-# Stage 2: Production
-FROM node:20-slim
-WORKDIR /app
-
-# Copy production assets from builder
-COPY --from=builder /app/apps/frontend/package*.json ./
-COPY --from=builder /app/apps/frontend/.next ./.next
-COPY --from=builder /app/apps/frontend/public ./public
-COPY --from=builder /app/apps/frontend/node_modules ./node_modules
-COPY --from=builder /app/apps/frontend/next.config.ts ./next.config.ts
+# Use the frontend directory for the final execution
+WORKDIR /app/apps/frontend
 
 EXPOSE 3000
 ENV PORT=3000
+ENV NODE_ENV=production
+
 CMD ["npm", "start"]
