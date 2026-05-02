@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Task, TaskStatus } from '../../../shared/src/types';
+import { Task, TaskStatus } from '@shared/types';
 import { db } from '../lib/firebase';
 import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 

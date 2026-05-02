@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./apps/frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_FIREBASE_PROJECT_ID=promptwars-495103
+    depends_on:
+      - task-service
+      - integration-service
+      - notification-service
+
+  task-service:
+    build:
+      context: ./services/task-service
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - GOOGLE_CLOUD_PROJECT=promptwars-495103
+
+  integration-service:
+    build:
+      context: ./services/integration-service
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - GOOGLE_CLOUD_PROJECT=promptwars-495103
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=8082
+      - GOOGLE_CLOUD_PROJECT=promptwars-495103

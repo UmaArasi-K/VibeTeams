@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Task } from '../../../shared/src/types';
+import { Task } from '@shared/types';
 
 interface GanttChartProps {
   tasks: Task[];
