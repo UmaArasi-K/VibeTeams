@@ -1,0 +1,39 @@
+steps:
+  # 1. Build Task Service Container
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/task-service:$COMMIT_SHA', './services/task-service']
+
+  # 2. Push Task Service Container to GCR
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/task-service:$COMMIT_SHA']
+
+  # 3. Deploy Task Service to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'task-service'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/task-service:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+
+  # 4. Deploy Frontend and Rules to Firebase
+  - name: 'gcr.io/$PROJECT_ID/firebase'
+    entrypoint: 'npx'
+    args:
+      - 'firebase-tools'
+      - 'deploy'
+      - '--project'
+      - '$PROJECT_ID'
+      - '--only'
+      - 'hosting,firestore'
+    env:
+      - 'FIREBASE_TOKEN=${_FIREBASE_TOKEN}'
+
+images:
+  - 'gcr.io/$PROJECT_ID/task-service:$COMMIT_SHA'
