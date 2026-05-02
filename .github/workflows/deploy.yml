@@ -17,13 +17,33 @@ jobs:
       - name: Google Auth
         uses: 'google-github-actions/auth@v2'
         with:
-          # Use your Project Number (705765904061) here
           workload_identity_provider: 'projects/705765904061/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
           service_account: '705765904061-compute@developer.gserviceaccount.com'
 
-      - name: Deploy to Cloud Run
+      - name: Deploy Frontend
         uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
           service: 'vibeteams-app'
           region: 'us-central1'
-          source: './' # GitHub will build the container for you as github actions and push this i setup other way to deploy just do this
+          source: 'apps/frontend'
+
+      - name: Deploy Task Service
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: 'task-service'
+          region: 'us-central1'
+          source: 'services/task-service'
+
+      - name: Deploy Integration Service
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: 'integration-service'
+          region: 'us-central1'
+          source: 'services/integration-service'
+
+      - name: Deploy Notification Service
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: 'notification-service'
+          region: 'us-central1'
+          source: 'services/notification-service'
