@@ -1,0 +1,14 @@
+{
+  "name": "vibeteams-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "shared"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "build:frontend": "npm run build -w frontend"
+  }
+}
