@@ -27,5 +27,5 @@ jobs:
         with:
           project_id: 'promptwars-495103'
           service: 'vibeteams-app'
-          region: 'us-central1'
+          region: 'asia-south1'
           source: './'
