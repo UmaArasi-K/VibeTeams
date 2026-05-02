@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isTeamMember(teamId) {
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/teams/$(teamId)).data.members[request.auth.uid] != null;
+    }
+    
+    function hasRole(teamId, role) {
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/teams/$(teamId)).data.members[request.auth.uid].role == role;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if request.auth.uid == userId;
+    }
+
+    // Teams
+    match /teams/{teamId} {
+      allow read: if isTeamMember(teamId);
+      allow create: if isSignedIn();
+      allow update: if hasRole(teamId, 'owner') || hasRole(teamId, 'admin');
+      
+      // Projects within a team
+      match /projects/{projectId} {
+        allow read: if isTeamMember(teamId);
+        allow write: if hasRole(teamId, 'owner') || hasRole(teamId, 'admin');
+      }
+      
+      // Tasks within a team
+      match /tasks/{taskId} {
+        allow read: if isTeamMember(teamId);
+        allow write: if isTeamMember(teamId); // Members can create/update tasks
+        allow delete: if hasRole(teamId, 'owner') || hasRole(teamId, 'admin');
+      }
+      
+      // Integrations
+      match /integrations/{provider} {
+        allow read: if isTeamMember(teamId);
+        allow write: if hasRole(teamId, 'owner') || hasRole(teamId, 'admin');
+      }
+    }
+
+    // Notifications
+    match /users/{userId}/notifications/{notifId} {
+      allow read: if request.auth.uid == userId;
+      allow write: if false; // Only backend services can write notifications
+    }
+  }
+}

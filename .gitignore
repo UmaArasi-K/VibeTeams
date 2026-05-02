@@ -1,28 +1,70 @@
-# Firebase build and deployment files
-/firebase-debug.log
-/firebase-debug.*.log
-.firebaserc
-
-# Firebase Hosting
-/firebase.json
-*.cache
-hosting/.cache
-
-# Firebase Functions
-/functions/node_modules/
-/functions/.env
-/functions/package-lock.json
-
-# Firebase Emulators
-/firebase-*.zip
-/.firebase/
-/emulator-ui/
-
-# Logs
+# --- General / OS ---
+.DS_Store
+Thumbs.db
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+*.swp
 
-# Environment files (local configs)
-/.env.*
+# --- Node.js / Monorepo ---
+node_modules/
+dist/
+build/
+.npm
+.eslintcache
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# --- Next.js (apps/frontend) ---
+apps/frontend/.next/
+apps/frontend/out/
+apps/frontend/build/
+apps/frontend/.env*.local
+
+# --- Environment Variables & Secrets (CRITICAL) ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+service-account-file.json
+credentials.json
+.secret.local
+
+# --- Firebase / Firestore ---
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+# Keep your actual rules/indexes tracked, but ignore emulator exports
+.firebase/emulators/
+firebase-export*/
+
+# --- Terraform (infrastructure/terraform) ---
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+.terraform.lock.hcl
+override.tf
+override.tf.json
+
+# --- Testing (Playwright / Jest) ---
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+coverage/
+
+# --- TypeScript ---
+*.tsbuildinfo
+next-env.d.ts
+
+# --- IDEs ---
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
