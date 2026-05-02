@@ -1,7 +1,7 @@
 name: Deploy to Cloud Run
 on:
   push:
-    branches: [ main ] # This triggers the deploy every time you push to main
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -17,13 +17,14 @@ jobs:
       - name: Google Auth
         uses: 'google-github-actions/auth@v2'
         with:
-          # Use your Project Number (705765904061) here
+          project_id: 'promptwars-495103' # ADD THIS LINE
           workload_identity_provider: 'projects/705765904061/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
           service_account: '705765904061-compute@developer.gserviceaccount.com'
 
       - name: Deploy to Cloud Run
         uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
+          project_id: 'promptwars-495103' # ADD THIS LINE
           service: 'vibeteams-app'
           region: 'us-central1'
-          source: './' # GitHub will build the container for you as github actions and push this i setup other way to deploy just do this
+          source: './'
