@@ -44,32 +44,30 @@ VibeTeams/
 - Firebase CLI (`npm i -g firebase-tools`)
 - Google Cloud SDK (optional, for deployment)
 
-### Local Development
+### Local Development (Direct)
 ```bash
-# 1. Clone and install
-git clone https://github.com/UmaArasi-K/VibeTeams.git
-cd VibeTeams
-
-# 2. Configure environment
-cp .env.example apps/frontend/.env.local
-
-# 3. Install dependencies
-cd apps/frontend && npm install
-cd ../../services/task-service && npm install
-cd ../integration-service && npm install
-cd ../notification-service && npm install
-
-# 4. Start Firebase emulators
+# Start Firebase emulators
 firebase emulators:start --import=./emulator-data --export-on-exit
 
-# 5. Start frontend (separate terminal)
+# Start services in separate terminals
 cd apps/frontend && npm run dev
-
-# 6. Start services (separate terminals)
 cd services/task-service && npm run dev
 cd services/integration-service && npm run dev
 cd services/notification-service && npm run dev
 ```
+
+### Local Orchestration (Docker Compose)
+If you have Docker installed, you can run the entire platform with one command:
+```bash
+# Build and start all services
+docker-compose up --build
+```
+This will start:
+- **Frontend**: http://localhost:3000
+- **Task Service**: http://localhost:8080
+- **Integration Service**: http://localhost:8081
+- **Notification Service**: http://localhost:8082
+
 
 ## API Endpoints
 
