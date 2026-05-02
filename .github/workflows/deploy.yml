@@ -1,7 +1,7 @@
 name: Deploy to Cloud Run
 on:
   push:
-    branches: [ main ] # This triggers the deploy every time you push to main
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -17,12 +17,14 @@ jobs:
       - name: Google Auth
         uses: 'google-github-actions/auth@v2'
         with:
+          project_id: 'promptwars-495103'
           workload_identity_provider: 'projects/705765904061/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
           service_account: '705765904061-compute@developer.gserviceaccount.com'
 
       - name: Deploy Frontend
         uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
+          project_id: 'promptwars-495103'
           service: 'vibeteams-app'
           region: 'us-central1'
           source: 'apps/frontend'
@@ -30,6 +32,7 @@ jobs:
       - name: Deploy Task Service
         uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
+          project_id: 'promptwars-495103'
           service: 'task-service'
           region: 'us-central1'
           source: 'services/task-service'
@@ -37,6 +40,7 @@ jobs:
       - name: Deploy Integration Service
         uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
+          project_id: 'promptwars-495103'
           service: 'integration-service'
           region: 'us-central1'
           source: 'services/integration-service'
@@ -44,6 +48,7 @@ jobs:
       - name: Deploy Notification Service
         uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
+          project_id: 'promptwars-495103'
           service: 'notification-service'
           region: 'us-central1'
           source: 'services/notification-service'
