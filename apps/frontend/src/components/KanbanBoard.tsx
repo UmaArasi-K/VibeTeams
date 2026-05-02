@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Task, TaskStatus } from '../../../shared/src/types';
+import { db } from '../lib/firebase';
+import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 
 interface KanbanColumnProps {
   status: TaskStatus;
@@ -34,7 +36,6 @@ const TaskCard: React.FC<{ task: Task }> = ({ task }) => {
       <p className="text-sm text-slate-400 line-clamp-2 mb-3">{task.description}</p>
       <div className="flex items-center justify-between">
         <div className="flex -space-x-2">
-          {/* Avatar placeholders */}
           <div className="w-6 h-6 rounded-full bg-indigo-500 border-2 border-slate-800 flex items-center justify-center text-[10px]">JD</div>
         </div>
         {task.dueDate && (
@@ -69,38 +70,46 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tasks, onTaskMove }
 };
 
 export default function KanbanBoard() {
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: '1',
-      title: 'Design System Architecture',
-      description: 'Define design tokens and component structure for the new coordination platform.',
-      status: 'in-progress',
-      priority: 'high',
-      teamId: 't1',
-      projectId: 'p1',
-      labels: ['Design'],
-      attachments: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: '2',
-      title: 'Firebase Integration',
-      description: 'Connect Firestore and implement real-time listeners for task updates.',
-      status: 'backlog',
-      priority: 'urgent',
-      teamId: 't1',
-      projectId: 'p1',
-      labels: ['Backend'],
-      attachments: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const moveTask = (taskId: string, newStatus: TaskStatus) => {
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+  // Hardcoded for demo - usually comes from context/auth
+  const teamId = 't1'; 
+
+  useEffect(() => {
+    const q = query(
+      collection(db, `teams/${teamId}/tasks`),
+      where('teamId', '==', teamId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const taskList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Task[];
+      setTasks(taskList);
+      setLoading(false);
+    }, (error) => {
+      console.error("Firestore Error:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [teamId]);
+
+  const moveTask = async (taskId: string, newStatus: TaskStatus) => {
+    try {
+      const taskRef = doc(db, `teams/${teamId}/tasks/${taskId}`);
+      await updateDoc(taskRef, { 
+        status: newStatus,
+        updatedAt: new Date()
+      });
+    } catch (error) {
+      console.error("Error updating task status:", error);
+    }
   };
+
+  if (loading) return <div className="p-8 text-slate-500">Loading workspace...</div>;
 
   return (
     <div className="flex gap-6 overflow-x-auto pb-6 h-full px-8">
