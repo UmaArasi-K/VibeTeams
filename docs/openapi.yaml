@@ -1,0 +1,252 @@
+openapi: 3.1.0
+info:
+  title: VibeTeams API
+  description: Team Coordination Platform — RESTful JSON API
+  version: 1.0.0
+  contact:
+    name: VibeTeams Team
+
+servers:
+  - url: https://task-service-xxx.run.app/api/v1
+    description: Task Service (Cloud Run)
+  - url: https://integration-service-xxx.run.app/api/v1
+    description: Integration Service (Cloud Run)
+  - url: https://notification-service-xxx.run.app/api/v1
+    description: Notification Service (Cloud Run)
+
+security:
+  - bearerAuth: []
+
+paths:
+  /teams/{teamId}/tasks:
+    get:
+      summary: List tasks
+      operationId: listTasks
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [backlog, in-progress, in-review, done, blocked] }
+        - name: assignee
+          in: query
+          schema: { type: string }
+        - name: project
+          in: query
+          schema: { type: string }
+        - name: after
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 25 }
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskListResponse'
+
+    post:
+      summary: Create a new task
+      operationId: createTask
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopeResponse'
+
+  /teams/{teamId}/tasks/{taskId}:
+    patch:
+      summary: Update task fields
+      operationId: updateTask
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Task updated
+
+    delete:
+      summary: Archive task (soft delete)
+      operationId: archiveTask
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Task archived
+
+  /teams/{teamId}/tasks/{taskId}/comments:
+    post:
+      summary: Add comment to task
+      operationId: addComment
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: taskId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content: { type: string }
+      responses:
+        '201':
+          description: Comment added
+
+  /teams/{teamId}/projects:
+    get:
+      summary: List projects for a team
+      operationId: listProjects
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of projects
+
+  /integrations/calendar/sync:
+    post:
+      summary: Trigger manual Calendar sync
+      operationId: calendarSync
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                teamId: { type: string }
+      responses:
+        '200':
+          description: Sync initiated
+
+  /webhooks/google:
+    post:
+      summary: Receive Google push notifications
+      operationId: googleWebhook
+      responses:
+        '200':
+          description: Webhook processed
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Firebase ID Token
+
+  schemas:
+    CreateTaskRequest:
+      type: object
+      required: [title, projectId]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [backlog, in-progress, in-review, done, blocked], default: backlog }
+        priority: { type: string, enum: [low, medium, high, urgent], default: medium }
+        projectId: { type: string }
+        assigneeId: { type: string }
+        dueDate: { type: string, format: date-time }
+        labels: { type: array, items: { type: string } }
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [backlog, in-progress, in-review, done, blocked] }
+        priority: { type: string, enum: [low, medium, high, urgent] }
+        assigneeId: { type: string }
+        dueDate: { type: string, format: date-time }
+        labels: { type: array, items: { type: string } }
+
+    EnvelopeResponse:
+      type: object
+      properties:
+        data: {}
+        error: {}
+        meta:
+          type: object
+          properties:
+            requestId: { type: string }
+            timestamp: { type: string, format: date-time }
+
+    TaskListResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            tasks:
+              type: array
+              items:
+                $ref: '#/components/schemas/Task'
+            pagination:
+              type: object
+              properties:
+                hasMore: { type: boolean }
+                nextCursor: { type: string }
+
+    Task:
+      type: object
+      properties:
+        id: { type: string }
+        teamId: { type: string }
+        projectId: { type: string }
+        title: { type: string }
+        description: { type: string }
+        status: { type: string }
+        priority: { type: string }
+        assigneeId: { type: string }
+        dueDate: { type: string, format: date-time }
+        labels: { type: array, items: { type: string } }
+        attachments: { type: array }
+        calendarEventId: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
