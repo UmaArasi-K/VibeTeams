@@ -1,4 +1,5 @@
 name: Deploy to Cloud Run
+
 on:
   push:
     branches: [ main ]
@@ -21,34 +22,10 @@ jobs:
           workload_identity_provider: 'projects/705765904061/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
           service_account: '705765904061-compute@developer.gserviceaccount.com'
 
-      - name: Deploy Frontend
+      - name: Deploy to Cloud Run
         uses: 'google-github-actions/deploy-cloudrun@v2'
         with:
           project_id: 'promptwars-495103'
           service: 'vibeteams-app'
           region: 'us-central1'
-          source: 'apps/frontend'
-
-      - name: Deploy Task Service
-        uses: 'google-github-actions/deploy-cloudrun@v2'
-        with:
-          project_id: 'promptwars-495103'
-          service: 'task-service'
-          region: 'us-central1'
-          source: 'services/task-service'
-
-      - name: Deploy Integration Service
-        uses: 'google-github-actions/deploy-cloudrun@v2'
-        with:
-          project_id: 'promptwars-495103'
-          service: 'integration-service'
-          region: 'us-central1'
-          source: 'services/integration-service'
-
-      - name: Deploy Notification Service
-        uses: 'google-github-actions/deploy-cloudrun@v2'
-        with:
-          project_id: 'promptwars-495103'
-          service: 'notification-service'
-          region: 'us-central1'
-          source: 'services/notification-service'
+          source: './'
