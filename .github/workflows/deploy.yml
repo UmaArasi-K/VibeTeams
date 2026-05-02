@@ -1,0 +1,29 @@
+name: Deploy to Cloud Run
+on:
+  push:
+    branches: [ main ] # This triggers the deploy every time you push to main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          # Use your Project Number (705765904061) here
+          workload_identity_provider: 'projects/705765904061/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: '705765904061-compute@developer.gserviceaccount.com'
+
+      - name: Deploy to Cloud Run
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: 'vibeteams-app'
+          region: 'us-central1'
+          source: './' # GitHub will build the container for you as github actions and push this i setup other way to deploy just do this
