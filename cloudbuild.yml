@@ -1,0 +1,156 @@
+# ──────────────────────────────────────────────
+# VibeTeams CI/CD Pipeline — Cloud Build
+# Stages: lint → unit test → build → deploy to Cloud Run
+# ADR-006 compliant, per agents.md Section 3.5
+# ──────────────────────────────────────────────
+
+steps:
+  # ── Stage 1: Install & Lint ──
+  - id: 'lint-task-service'
+    name: 'node:20-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'cd services/task-service && npm ci && npx tsc --noEmit'
+
+  - id: 'lint-integration-service'
+    name: 'node:20-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'cd services/integration-service && npm ci && npx tsc --noEmit'
+
+  - id: 'lint-notification-service'
+    name: 'node:20-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'cd services/notification-service && npm ci && npx tsc --noEmit'
+
+  # ── Stage 2: Unit Tests ──
+  - id: 'test-task-service'
+    name: 'node:20-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'cd services/task-service && npm test'
+    waitFor: ['lint-task-service']
+
+  - id: 'test-integration-service'
+    name: 'node:20-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'cd services/integration-service && npm test'
+    waitFor: ['lint-integration-service']
+
+  - id: 'test-notification-service'
+    name: 'node:20-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'cd services/notification-service && npm test'
+    waitFor: ['lint-notification-service']
+
+  # ── Stage 3: Build Containers ──
+  - id: 'build-task-service'
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/task-service:$COMMIT_SHA', './services/task-service']
+    waitFor: ['test-task-service']
+
+  - id: 'build-integration-service'
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/integration-service:$COMMIT_SHA', './services/integration-service']
+    waitFor: ['test-integration-service']
+
+  - id: 'build-notification-service'
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/notification-service:$COMMIT_SHA', './services/notification-service']
+    waitFor: ['test-notification-service']
+
+  # ── Stage 4: Push Containers ──
+  - id: 'push-task-service'
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/task-service:$COMMIT_SHA']
+    waitFor: ['build-task-service']
+
+  - id: 'push-integration-service'
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/integration-service:$COMMIT_SHA']
+    waitFor: ['build-integration-service']
+
+  - id: 'push-notification-service'
+    name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/notification-service:$COMMIT_SHA']
+    waitFor: ['build-notification-service']
+
+  # ── Stage 5: Deploy to Cloud Run ──
+  - id: 'deploy-task-service'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'task-service'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/task-service:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--service-account'
+      - 'task-service-sa@$PROJECT_ID.iam.gserviceaccount.com'
+      - '--allow-unauthenticated'
+    waitFor: ['push-task-service']
+
+  - id: 'deploy-integration-service'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'integration-service'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/integration-service:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--service-account'
+      - 'integration-service-sa@$PROJECT_ID.iam.gserviceaccount.com'
+      - '--allow-unauthenticated'
+    waitFor: ['push-integration-service']
+
+  - id: 'deploy-notification-service'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'notification-service'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/notification-service:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--service-account'
+      - 'notification-service-sa@$PROJECT_ID.iam.gserviceaccount.com'
+    waitFor: ['push-notification-service']
+
+  # ── Stage 6: Deploy Firebase (Hosting + Firestore Rules) ──
+  - id: 'deploy-firebase'
+    name: 'node:20-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'npx -y firebase-tools deploy --project $PROJECT_ID --only hosting,firestore --non-interactive'
+    waitFor: ['deploy-task-service']
+
+images:
+  - 'gcr.io/$PROJECT_ID/task-service:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/integration-service:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/notification-service:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
